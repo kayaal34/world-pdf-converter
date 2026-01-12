@@ -157,7 +157,7 @@ Bu proje MIT Lisansı altında yayınlanmıştır - detaylar için [LICENSE](LIC
 
 ## 👨‍💻 Geliştirici
 
-- **Yahya Kaya** - [@kayaal34](https://github.com/kayaal34)
+- [@kayaal34](https://github.com/kayaal34)
 
 ## 💬 İletişim & Destek
 
@@ -165,8 +165,4 @@ Bu proje MIT Lisansı altında yayınlanmıştır - detaylar için [LICENSE](LIC
 - **Tartışmalar**: Soru ve fikirler için GitHub Discussions'ı kullanın
 
 ---
-
-⭐ Bu projeyi beğendiyseniz yıldız vermeyi unutmayın!
-
-**Son Güncelleme:** 12 Ocak 2026
 
