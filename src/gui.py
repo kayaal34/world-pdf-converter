@@ -2,9 +2,10 @@
 import tkinter as tk
 from tkinter import filedialog, messagebox
 from pathlib import Path
-from converter import WordToPDFConverter
+from converter import WordToPDFConverter, unique_output_path
 import os
 import sys
+import threading
 
 
 class WordPDFConverterApp:
@@ -21,7 +22,7 @@ class WordPDFConverterApp:
             icon_path = Path(__file__).parent.parent / "assets" / "icon.ico"
             if icon_path.exists():
                 self.root.iconbitmap(icon_path)
-        except:
+        except tk.TclError:
             pass
         
         self.converter = WordToPDFConverter()
@@ -104,7 +105,7 @@ class WordPDFConverterApp:
         # Output location info
         output_info = tk.Label(
             convert_section,
-            text="LibreOffice gerekliydir - kurulu değilse yüklemelisiniz\nSonuç mükemmel olacak (resimler + formatlar dahil)",
+            text="Microsoft Word veya LibreOffice gereklidir\nPDF, İndirilenler klasörüne kaydedilir",
             font=('Arial', 9),
             bg='#f0f0f0',
             fg='#7f8c8d'
@@ -112,7 +113,7 @@ class WordPDFConverterApp:
         output_info.pack()
         
         # Convert button
-        convert_btn = tk.Button(
+        self.convert_btn = tk.Button(
             convert_section,
             text="PDF'ye Dönüştür",
             command=self.convert_to_pdf,
@@ -123,7 +124,7 @@ class WordPDFConverterApp:
             pady=10,
             cursor='hand2'
         )
-        convert_btn.pack(pady=15)
+        self.convert_btn.pack(pady=15)
         
         # Status section
         status_section = tk.LabelFrame(
@@ -175,46 +176,51 @@ class WordPDFConverterApp:
             messagebox.showerror("Hata", "Lütfen önce bir Word dosyası seçin!")
             return
         
+        # Get downloads folder
+        downloads_folder = Path.home() / "Downloads"
+        output_file = unique_output_path(downloads_folder, Path(self.selected_file).stem)
+
+        self.add_status("⏳ Dönüştürme başlatılıyor...")
+        self.convert_btn.config(state=tk.DISABLED)
+
+        # Dönüştürme uzun sürebilir; arayüz donmasın diye ayrı thread'de çalışır
+        threading.Thread(
+            target=self._convert_worker,
+            args=(self.selected_file, output_file),
+            daemon=True
+        ).start()
+
+    def _convert_worker(self, input_file, output_file):
+        """Run the conversion off the UI thread"""
         try:
-            # Get downloads folder
-            downloads_folder = str(Path.home() / "Downloads")
-            
-            # Create output filename
-            input_name = Path(self.selected_file).stem
-            output_file = Path(downloads_folder) / f"{input_name}.pdf"
-            
-            # Handle existing file
-            counter = 1
-            while output_file.exists():
-                output_file = Path(downloads_folder) / f"{input_name}_{counter}.pdf"
-                counter += 1
-            
-            self.add_status("⏳ Dönüştürme başlatılıyor...")
-            self.root.update()
-            
-            # Convert
-            success = self.converter.convert(self.selected_file, str(output_file))
-            
-            if success:
-                self.add_status(f"✓ Dönüştürme başarılı!")
-                self.add_status(f"✓ Dosya kaydedildi: {output_file}")
-                
-                # Ask to open file
-                if messagebox.askyesno(
-                    "Başarı",
-                    f"PDF dosyası başarıyla oluşturuldu!\n\n{output_file}\n\nDosyayı açmak ister misiniz?"
-                ):
-                    os.startfile(str(output_file))
-                    self.add_status("✓ Dosya açılıyor...")
-            else:
-                self.add_status("✗ Dönüştürme başarısız oldu!")
-                messagebox.showerror("Hata", "Dönüştürme sırasında bir hata oluştu!")
-        
+            success = self.converter.convert(input_file, str(output_file))
+            error = self.converter.last_error
         except Exception as e:
-            error_msg = f"Hata: {str(e)}"
-            self.add_status(f"✗ {error_msg}")
-            messagebox.showerror("Hata", error_msg)
-    
+            success, error = False, str(e)
+        # Tkinter'a sadece ana thread'den dokunulur
+        self.root.after(0, self._conversion_finished, success, output_file, error)
+
+    def _conversion_finished(self, success, output_file, error):
+        """Show the result of a conversion"""
+        self.convert_btn.config(state=tk.NORMAL)
+
+        if success:
+            self.add_status(f"✓ Dönüştürme başarılı!")
+            self.add_status(f"✓ Dosya kaydedildi: {output_file}")
+
+            # Ask to open file
+            if messagebox.askyesno(
+                "Başarı",
+                f"PDF dosyası başarıyla oluşturuldu!\n\n{output_file}\n\nDosyayı açmak ister misiniz?"
+            ):
+                os.startfile(str(output_file))
+                self.add_status("✓ Dosya açılıyor...")
+        else:
+            self.add_status("✗ Dönüştürme başarısız oldu!")
+            if error:
+                self.add_status(error)
+            messagebox.showerror("Hata", f"Dönüştürme sırasında bir hata oluştu!\n\n{error or ''}")
+
     def add_status(self, message):
         """Add status message to status text"""
         self.status_text.config(state=tk.NORMAL)
