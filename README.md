@@ -22,9 +22,9 @@ Windows uygulaması - Word (.docx) dosyalarını PDF formatına hızlıca dönü
 
 - **Python** 3.8 veya üzeri
 - **Windows** 7 veya üzeri
-- **LibreOffice** (Dönüştürme için gerekli)
+- **Microsoft Word** veya **LibreOffice** (dönüştürme için biri yeterli)
 
-### LibreOffice Kurulumu
+### LibreOffice Kurulumu (Word yoksa)
 
 1. https://www.libreoffice.org/download/ adresine gidin
 2. Windows için installer indirin
@@ -88,18 +88,28 @@ world-pdf-converter/
 | Tkinter | Built-in | GUI Framework |
 | docx2pdf | 0.1.8 | DOCX → PDF dönüştürme |
 | python-docx | 0.8.11 | Word dosyası işleme |
-| LibreOffice | Kurulu | Dönüştürme backend'i |
+| Microsoft Word / LibreOffice | Kurulu | Dönüştürme backend'i |
 
 ### Dönüştürme Süreci
 
 1. Word dosyası (`.docx`) seçilir
-2. `docx2pdf` kütüphanesi kullanarak LibreOffice'e gönderilir
-3. LibreOffice dosyayı PDF formatına dönüştürür
+2. Önce `docx2pdf` ile Microsoft Word kullanılarak dönüştürülür
+3. Word yoksa veya hata verirse LibreOffice (`soffice --headless`) denenir
 4. PDF dosyası İndirilmiş Dosyalar klasörüne kaydedilir
+
+## 🧪 Testler
+
+```bash
+pip install pytest
+python -m pytest -q
+```
 
 ## 🐛 Sorun Giderme
 
 ### "LibreOffice bulunamadı" hatası
+
+Word kurulu değilse veya dönüştürme Word'de başarısız olursa LibreOffice gerekir.
+Uygulama `soffice`'i PATH'te ve `C:\Program Files\LibreOffice` altında arar.
 
 **Çözüm:** LibreOffice'i kurun
 ```bash
