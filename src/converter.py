@@ -4,6 +4,9 @@ import os
 import shutil
 import subprocess
 import tempfile
+import logging
+
+logger = logging.getLogger(__name__)
 
 LIBREOFFICE_TIMEOUT = 120
 
@@ -103,10 +106,10 @@ class WordToPDFConverter:
 
             # Verify file was created
             if os.path.exists(pdf_file_path):
-                print(f"✓ Dönüştürme başarılı ({name}): {pdf_file_path}")
+                logger.info("Dönüştürme başarılı (%s): %s", name, pdf_file_path)
                 return True
             errors.append(f"{name}: PDF dosyası oluşturulamadı")
 
         self.last_error = "\n".join(errors)
-        print(f"Error converting document: {self.last_error}")
+        logger.error("Dönüştürme başarısız: %s", self.last_error)
         return False
